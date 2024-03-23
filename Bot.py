@@ -1,18 +1,45 @@
 import os
+import time
 import logging
-from telebot import TeleBot
-from telebot import telebot, types
+import telebot
+from telebot import types
 from Utils import log
 from GitHubSearch import get_inline_data, get_message_url_and_buttons_for
+from flask import Flask, redirect, request, abort
 from dotenv import load_dotenv
-
 load_dotenv()
-
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-bot = TeleBot(BOT_TOKEN,threaded= False)
-BOT_USERNAME = bot.get_me().username
+APP_ADDRESS = os.environ.get("APP_ADDRESS")
+WEBHOOK_PORT = os.environ.get("PORT")
+WEBHOOK_PATH = f"/{BOT_TOKEN}/"
+WEBHOOK_URL = f"https://{APP_ADDRESS}:{WEBHOOK_PORT}" + WEBHOOK_PATH
 
+bot = telebot.TeleBot(BOT_TOKEN,threaded=False)
+BOT_USERNAME = bot.get_me().username
 telebot.logger.setLevel(logging.INFO)
+
+bot.remove_webhook()
+time.sleep(0.1)
+bot.set_webhook(url=WEBHOOK_URL)
+
+app = Flask(__name__)
+
+
+@app.route("/", methods=["GET"])
+def testing():
+    return redirect(f"https://t.me/{BOT_USERNAME}", code=302)
+
+
+# Process webhook calls
+@app.route(WEBHOOK_PATH, methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    else:
+        abort(403)
 
 
 # send welcome message
@@ -82,7 +109,3 @@ def update_message_with_latest_release(chosen):
         )
     else:
         log("failed to get chosen result details. Id: "+id)
-
-
-if __name__ == "__main__":
-    bot.infinity_polling()
