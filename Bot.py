@@ -42,7 +42,13 @@ def send_welcome(message):
 # handle commands
 @bot.message_handler(commands=["help", "start"])
 def handle_commands(message):
-    send_welcome(message)
+    if message.text.endswith("help"):
+        url = "https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories"
+        button = types.InlineKeyboardMarkup()
+        button.add(types.InlineKeyboardButton("Search Documentation",url=url))
+        bot.reply_to(message=message,text="See the documentation to write better search query.",reply_markup=button)
+    else:
+        send_welcome(message)
 
 
 # All text message handled here
