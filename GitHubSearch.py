@@ -27,7 +27,7 @@ def search_repos(query):
                 log(f"Found {data['total_count']} repos for \"{query}\"")
                 return data["items"][:50]
             else:
-                log(f"Not 200. {response.text()}")
+                log(f"Not 200. {response}")
     except requests.RequestException as e:
         log(f"Error fetching repos: {e}")
     return None
@@ -112,9 +112,10 @@ def get_latest_release_details(full_name):
         tag = item["tag_name"]
         name = item["name"]
         time = item["published_at"]
+        downloads =  sum(asset['download_count'] for asset in item["assets"])
         message = parse_text_for_tg_markdown(item["body"])
         url = item["html_url"]
-        release_details = f"\n<b>Latest Release</b>\n\n{name}\nversion: {tag}\nTime: {time}\n\n<i>{message}</i>"
+        release_details = f"\n<b>Latest Release</b>\n\n{name}\nversion: {tag}\nDownloads: {downloads}\nTime: {time}\n\n<i>{message}</i>"
         return release_details, url
     else:
         return None, None
